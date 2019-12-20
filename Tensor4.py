@@ -84,4 +84,8 @@ if __name__ == '__main__':
         correct_pred = tf.equal(tf.argmax(pred, 1), tf.argmax(Y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
         acc = accuracy.eval({X: x_test, Y: y_test})
+       conf_mat = tf.math.confusion_matrix(labels=tf.argmax(Y, 1), predictions=tf.argmax(pred, 1),
+                                            num_classes=2)
+        conf_mat_to_print = sesh.run(conf_mat, feed_dict={X: x_test, Y: y_test})
         print(f'Accuracy: {acc * 100:.2f}%')
+        print(conf_mat_to_print)
