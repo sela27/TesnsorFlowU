@@ -43,8 +43,8 @@ if __name__ == '__main__':
         y_train = sesh.run(tf.one_hot(y_train, 2))
         y_test = sesh.run(tf.one_hot(y_test, 2))
 
-    learning_rate = 0.001
-    epochs = 2000
+    learning_rate = 0.00001
+    epochs = 4000
     batch_size = 100
     batches = int(x_train.shape[0] / batch_size)
 
@@ -57,8 +57,9 @@ if __name__ == '__main__':
 
     pred = tf.nn.softmax(tf.add(tf.matmul(X, W), B))
     #pred = tf.sigmoid(tf.add(tf.matmul(X, W), B))
-    cost = tf.reduce_mean(-tf.reduce_sum(Y * tf.log(pred)))
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+    #cost = tf.reduce_mean(-tf.reduce_sum(Y * tf.log(pred)))
+    cost = tf.reduce_mean(-tf.reduce_sum(Y * tf.log(tf.clip_by_value(pred, 1e-10, 1.0))))
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate, use_locking=True).minimize(cost)
 
     with tf.Session() as sesh:
         sesh.run(tf.global_variables_initializer())
@@ -70,11 +71,15 @@ if __name__ == '__main__':
                 offset = i * epoch
                 x = x_train[offset: offset + batch_size]
                 y = y_train[offset: offset + batch_size]
+                #print("W: " + str(W.eval(sesh)))
+                #print("B: " + str(B.eval(sesh)))
+                #print("x: " + str(x))
+                #print("y: " + str(y))
                 sesh.run(optimizer, feed_dict={X: x, Y: y})
                 c = sesh.run(cost, feed_dict={X: x, Y: y})
 
             if not epoch % 500:
-                print(f'epoch:{epoch:2d} cost={c:.4f}')
+                print(f'epoch:{epoch:2d} cost={c:.16f}')
 
         correct_pred = tf.equal(tf.argmax(pred, 1), tf.argmax(Y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
